@@ -1,28 +1,44 @@
-const mongoose = require('mongoose');
-const fs = require('fs');
-const path = require('path');
+const express = require('express');
 const Contact = require('../models/contact');
-require('dotenv').config();
 
-const { MONGODB_USER, MONGODB_PASSWORD, MONGODB_URL, MONGODB_DB } = process.env;
-const uri = `mongodb+srv://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
+const router = express.Router();
 
-async function initMongoConnection() {
+router.get('/', async (req, res) => {
   try {
-    await mongoose.connect(uri);
-    console.log('MongoDB connection established!');
+    console.log('Fetching contacts...');
+    const contacts = await Contact.find();
 
-    const contactCount = await Contact.countDocuments();
-    if (contactCount === 0) {
-      const contactsPath = path.join(__dirname, '../../contacts.json');
-      const contactsData = JSON.parse(fs.readFileSync(contactsPath, 'utf-8'));
-      await Contact.insertMany(contactsData);
-      console.log('Contacts imported successfully from contacts.json');
+    if (!contacts || contacts.length === 0) {
+      console.log('No contacts found');
+    }
+
+    res.json({
+      status: 200,
+      message: 'Successfully found contacts!',
+      data: contacts,
+    });
+  } catch (err) {
+    console.error('Error fetching contacts:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/:contactId', async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.contactId); // Поиск контакта по ID
+    if (contact) {
+      res.json({
+        status: 200,
+        message: `Found contact with id ${req.params.contactId}!`,
+        data: contact,
+      });
+    } else {
+      res.status(404).json({ message: 'Contact not found' });
     }
   } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
-    throw err;
+    console.error('Error fetching contact by ID:', err);
+    res.status(500).json({ message: 'Server error' });
   }
-}
+});
 
-module.exports = initMongoConnection;
+module.exports = router;
