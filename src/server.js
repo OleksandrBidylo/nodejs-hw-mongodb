@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const pino = require('pino');
-const contactsRouter = require('./services/contacts');
+import express from 'express';
+import cors from 'cors';
+import pino from 'pino';
+import { getContacts, getContactById } from './services/contacts.js';
 
 const setupServer = () => {
   const app = express();
@@ -23,7 +23,31 @@ const setupServer = () => {
     next();
   });
 
-  app.use('/contacts', contactsRouter);
+  app.get('/contacts', async (req, res) => {
+    try {
+      const contacts = await getContacts();
+      res.json({
+        status: 200,
+        message: 'Successfully found contacts!',
+        data: contacts,
+      });
+    } catch (err) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
+  app.get('/contacts/:contactId', async (req, res) => {
+    try {
+      const contact = await getContactById(req.params.contactId);
+      res.json({
+        status: 200,
+        message: `Found contact with id ${req.params.contactId}!`,
+        data: contact,
+      });
+    } catch (err) {
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
 
   app.use((req, res) => {
     res.status(404).json({ message: 'Not found' });
@@ -35,4 +59,4 @@ const setupServer = () => {
   });
 };
 
-module.exports = setupServer;
+export default setupServer;

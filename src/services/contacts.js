@@ -1,44 +1,23 @@
-const express = require('express');
-const Contact = require('../models/contact');
+import Contact from '../models/contact.js';
 
-const router = express.Router();
-
-router.get('/', async (req, res) => {
+const getContacts = async () => {
   try {
-    console.log('Fetching contacts...');
-    const contacts = await Contact.find();
-
-    if (!contacts || contacts.length === 0) {
-      console.log('No contacts found');
-    }
-
-    res.json({
-      status: 200,
-      message: 'Successfully found contacts!',
-      data: contacts,
-    });
+    return await Contact.find();
   } catch (err) {
-    console.error('Error fetching contacts:', err);
-    res.status(500).json({ message: 'Server error' });
+    throw new Error('Failed to get contacts');
   }
-});
+};
 
-router.get('/:contactId', async (req, res) => {
+const getContactById = async (id) => {
   try {
-    const contact = await Contact.findById(req.params.contactId); // Поиск контакта по ID
-    if (contact) {
-      res.json({
-        status: 200,
-        message: `Found contact with id ${req.params.contactId}!`,
-        data: contact,
-      });
-    } else {
-      res.status(404).json({ message: 'Contact not found' });
+    const contact = await Contact.findById(id);
+    if (!contact) {
+      throw new Error('Contact not found');
     }
+    return contact;
   } catch (err) {
-    console.error('Error fetching contact by ID:', err);
-    res.status(500).json({ message: 'Server error' });
+    throw new Error('Failed to get contact by ID');
   }
-});
+};
 
-module.exports = router;
+export { getContacts, getContactById };
