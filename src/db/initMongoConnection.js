@@ -11,7 +11,7 @@ const initMongoConnection = async () => {
     await mongoose.connect(uri);
     console.log('MongoDB connection established!');
   } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
+    console.error('Failed to connect to MongoDB:', err.message);
     throw err;
   }
 };
