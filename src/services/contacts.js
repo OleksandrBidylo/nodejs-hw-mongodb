@@ -1,8 +1,26 @@
 import createError from 'http-errors';
 import Contact from '../models/contact.js';
 
-const getContacts = async () => {
-  return await Contact.find();
+const getContacts = async ({ page, perPage, sortBy, sortOrder }) => {
+  const totalItems = await Contact.countDocuments();
+  const totalPages = Math.ceil(totalItems / perPage);
+  const hasPreviousPage = page > 1;
+  const hasNextPage = page < totalPages;
+
+  const contacts = await Contact.find()
+    .skip((page - 1) * perPage)
+    .limit(Number(perPage))
+    .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
+
+  return {
+    data: contacts,
+    page: Number(page),
+    perPage: Number(perPage),
+    totalItems,
+    totalPages,
+    hasPreviousPage,
+    hasNextPage,
+  };
 };
 
 const getContactById = async (id) => {

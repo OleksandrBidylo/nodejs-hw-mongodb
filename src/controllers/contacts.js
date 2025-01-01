@@ -8,11 +8,18 @@ import {
 import ctrlWrapper from '../utils/ctrlWrapper.js';
 
 const getContactsCtrl = ctrlWrapper(async (req, res) => {
-  const contacts = await getContacts();
+  const {
+    page = 1,
+    perPage = 10,
+    sortBy = 'name',
+    sortOrder = 'asc',
+  } = req.query;
+
+  const contactsData = await getContacts({ page, perPage, sortBy, sortOrder });
   res.json({
     status: 200,
     message: 'Successfully found contacts!',
-    data: contacts,
+    data: contactsData,
   });
 });
 
