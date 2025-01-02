@@ -6,24 +6,21 @@ import {
   updateContactCtrl,
   deleteContactCtrl,
 } from '../controllers/contacts.js';
-import validateBody from '../middlewares/validateBody.js';
+import { validateBody } from '../models/contactValidation.js';
+import { contactValidationSchema } from '../models/contactValidation.js';
 import isValidId from '../middlewares/isValidId.js';
-import {
-  contactSchema,
-  updateContactSchema,
-} from '../models/contactValidation.js';
 
 const router = express.Router();
 
 router.get('/', getContactsCtrl);
 router.get('/:contactId', isValidId, getContactByIdCtrl);
-router.post('/', validateBody(contactSchema), createContactCtrl);
+router.post('/', validateBody(contactValidationSchema), createContactCtrl);
 router.patch(
   '/:contactId',
   isValidId,
-  validateBody(updateContactSchema),
+  validateBody(contactValidationSchema),
   updateContactCtrl,
-);
+); // Валідація body + ID
 router.delete('/:contactId', isValidId, deleteContactCtrl);
 
 export default router;
