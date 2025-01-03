@@ -57,6 +57,12 @@ export const loginCtrl = async (req, res, next) => {
 
     await newSession.save();
 
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 15 * 60 * 1000,
+    });
+
     res.status(200).json({
       status: 200,
       message: 'Successfully logged in an user!',
@@ -92,6 +98,12 @@ export const refreshCtrl = async (req, res, next) => {
 
     await session.save();
 
+    res.cookie('accessToken', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 15 * 60 * 1000,
+    });
+
     res.status(200).json({
       status: 200,
       message: 'Successfully refreshed session!',
@@ -107,6 +119,11 @@ export const logoutCtrl = async (req, res, next) => {
     const { refreshToken } = req.body;
 
     await Session.deleteOne({ refreshToken });
+
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
 
     res.status(204).send();
   } catch (error) {
