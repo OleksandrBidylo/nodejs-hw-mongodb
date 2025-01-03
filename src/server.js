@@ -5,7 +5,7 @@ import authRouter from './routers/auth.js';
 
 dotenv.config();
 
-function setupServer() {
+function startServer() {
   const app = express();
 
   app.use(express.json());
@@ -38,4 +38,4 @@ function setupServer() {
   return app;
 }
 
-export default setupServer;
+export default startServer;
