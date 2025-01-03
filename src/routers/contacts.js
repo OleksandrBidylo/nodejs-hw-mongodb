@@ -20,7 +20,7 @@ router.patch(
   isValidId,
   validateBody(contactValidationSchema),
   updateContactCtrl,
-); // Валідація body + ID
+);
 router.delete('/:contactId', isValidId, deleteContactCtrl);
 
 export default router;
