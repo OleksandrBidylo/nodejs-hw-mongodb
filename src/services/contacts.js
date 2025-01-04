@@ -1,13 +1,13 @@
 import createError from 'http-errors';
 import Contact from '../models/contact.js';
 
-const getContacts = async ({ page, perPage, sortBy, sortOrder }) => {
-  const totalItems = await Contact.countDocuments();
+const getContacts = async ({ page, perPage, sortBy, sortOrder, userId }) => {
+  const totalItems = await Contact.countDocuments({ userId });
   const totalPages = Math.ceil(totalItems / perPage);
   const hasPreviousPage = page > 1;
   const hasNextPage = page < totalPages;
 
-  const contacts = await Contact.find()
+  const contacts = await Contact.find({ userId })
     .skip((page - 1) * perPage)
     .limit(Number(perPage))
     .sort({ [sortBy]: sortOrder === 'asc' ? 1 : -1 });
@@ -23,9 +23,9 @@ const getContacts = async ({ page, perPage, sortBy, sortOrder }) => {
   };
 };
 
-const getContactById = async (id) => {
-  const contact = await Contact.findById(id);
-  if (!contact) throw createError(404, 'Contact not found');
+const getContactById = async (id, userId) => {
+  const contact = await Contact.findOne({ _id: id, userId });
+  if (!contact) throw createError(404, 'Contact not found or access denied');
   return contact;
 };
 
@@ -33,15 +33,17 @@ const createContact = async (contactData) => {
   return await Contact.create(contactData);
 };
 
-const updateContact = async (id, updates) => {
-  const contact = await Contact.findByIdAndUpdate(id, updates, { new: true });
-  if (!contact) throw createError(404, 'Contact not found');
+const updateContact = async (id, updates, userId) => {
+  const contact = await Contact.findOneAndUpdate({ _id: id, userId }, updates, {
+    new: true,
+  });
+  if (!contact) throw createError(404, 'Contact not found or access denied');
   return contact;
 };
 
-const deleteContact = async (id) => {
-  const contact = await Contact.findByIdAndDelete(id);
-  if (!contact) throw createError(404, 'Contact not found');
+const deleteContact = async (id, userId) => {
+  const contact = await Contact.findOneAndDelete({ _id: id, userId });
+  if (!contact) throw createError(404, 'Contact not found or access denied');
   return contact;
 };
 

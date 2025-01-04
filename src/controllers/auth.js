@@ -1,11 +1,49 @@
 import bcrypt from 'bcrypt';
 import createError from 'http-errors';
+import Joi from 'joi';
 import User from '../models/users.js';
 import Session from '../models/session.js';
 import { generateToken } from '../utils/randomToken.js';
 
+export const registerValidation = Joi.object({
+  name: Joi.string().min(3).max(100).required().messages({
+    'string.empty': 'Name is required',
+    'string.min': 'Name should have at least 3 characters',
+    'string.max': 'Name should have less than 100 characters',
+    'any.required': 'Name is required',
+  }),
+  email: Joi.string().email().required().messages({
+    'string.empty': 'Email is required',
+    'string.email': 'Email must be a valid email',
+    'any.required': 'Email is required',
+  }),
+  password: Joi.string().min(6).required().messages({
+    'string.empty': 'Password is required',
+    'string.min': 'Password should have at least 6 characters',
+    'any.required': 'Password is required',
+  }),
+});
+
+export const loginValidation = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.empty': 'Email is required',
+    'string.email': 'Email must be a valid email',
+    'any.required': 'Email is required',
+  }),
+  password: Joi.string().min(6).required().messages({
+    'string.empty': 'Password is required',
+    'string.min': 'Password should have at least 6 characters',
+    'any.required': 'Password is required',
+  }),
+});
+
 export const registerCtrl = async (req, res, next) => {
   try {
+    const { error } = registerValidation.validate(req.body);
+    if (error) {
+      return next(createError(400, error.details[0].message));
+    }
+
     const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
@@ -30,6 +68,11 @@ export const registerCtrl = async (req, res, next) => {
 
 export const loginCtrl = async (req, res, next) => {
   try {
+    const { error } = loginValidation.validate(req.body);
+    if (error) {
+      return next(createError(400, error.details[0].message));
+    }
+
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
@@ -57,13 +100,13 @@ export const loginCtrl = async (req, res, next) => {
 
     await newSession.save();
 
-    res.cookie('accessToken', accessToken, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie('sessionId', newSession._id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 30 * 24 * 60 * 60 * 1000,
@@ -72,7 +115,7 @@ export const loginCtrl = async (req, res, next) => {
     res.status(200).json({
       status: 200,
       message: 'Successfully logged in an user!',
-      data: { accessToken, refreshToken },
+      data: { accessToken },
     });
   } catch (error) {
     next(error);
@@ -104,12 +147,6 @@ export const refreshCtrl = async (req, res, next) => {
 
     await session.save();
 
-    res.cookie('accessToken', newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000,
-    });
-
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -132,12 +169,12 @@ export const logoutCtrl = async (req, res, next) => {
 
     await Session.deleteOne({ refreshToken });
 
-    res.clearCookie('accessToken', {
+    res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
     });
 
-    res.clearCookie('refreshToken', {
+    res.clearCookie('sessionId', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
     });

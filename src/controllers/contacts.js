@@ -15,7 +15,14 @@ const getContactsCtrl = ctrlWrapper(async (req, res) => {
     sortOrder = 'asc',
   } = req.query;
 
-  const contactsData = await getContacts({ page, perPage, sortBy, sortOrder });
+  const contactsData = await getContacts({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    userId: req.user._id,
+  });
+
   res.json({
     status: 200,
     message: 'Successfully found contacts!',
@@ -24,7 +31,7 @@ const getContactsCtrl = ctrlWrapper(async (req, res) => {
 });
 
 const getContactByIdCtrl = ctrlWrapper(async (req, res) => {
-  const contact = await getContactById(req.params.contactId);
+  const contact = await getContactById(req.params.contactId, req.user._id);
   res.json({
     status: 200,
     message: 'Successfully found contact!',
@@ -33,7 +40,13 @@ const getContactByIdCtrl = ctrlWrapper(async (req, res) => {
 });
 
 const createContactCtrl = ctrlWrapper(async (req, res) => {
-  const contact = await createContact(req.body);
+  const contactData = {
+    ...req.body,
+    userId: req.user._id,
+  };
+
+  const contact = await createContact(contactData);
+
   res.status(201).json({
     status: 201,
     message: 'Successfully created contact!',
@@ -42,7 +55,12 @@ const createContactCtrl = ctrlWrapper(async (req, res) => {
 });
 
 const updateContactCtrl = ctrlWrapper(async (req, res) => {
-  const contact = await updateContact(req.params.contactId, req.body);
+  const contact = await updateContact(
+    req.params.contactId,
+    req.body,
+    req.user._id,
+  );
+
   res.json({
     status: 200,
     message: 'Successfully updated contact!',
@@ -51,7 +69,8 @@ const updateContactCtrl = ctrlWrapper(async (req, res) => {
 });
 
 const deleteContactCtrl = ctrlWrapper(async (req, res) => {
-  await deleteContact(req.params.contactId);
+  await deleteContact(req.params.contactId, req.user._id);
+
   res.status(204).send();
 });
 
