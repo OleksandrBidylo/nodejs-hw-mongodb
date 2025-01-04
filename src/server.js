@@ -1,41 +1,51 @@
 import express from 'express';
-import mongoose from 'mongoose';
+import cors from 'cors';
+import pino from 'pino';
 import dotenv from 'dotenv';
 import authRouter from './routers/auth.js';
+import contactsRouter from './routers/contacts.js';
+import initMongoConnection from './db/initMongoConnection.js';
+
+import errorHandler from './middlewares/errorHandler.js';
+import notFoundHandler from './middlewares/notFoundHandler.js';
 
 dotenv.config();
 
-function startServer() {
+const logger = pino({
+  transport: {
+    target: 'pino-pretty',
+    options: { colorize: true, translateTime: 'SYS:standard' },
+  },
+});
+
+const setupServer = () => {
   const app = express();
 
+  app.use(cors());
   app.use(express.json());
 
-  app.use('/auth', authRouter);
-
-  app.use((err, req, res, next) => {
-    const status = err.status || 500;
-    res.status(status).json({ message: err.message });
+  app.use((req, res, next) => {
+    logger.info({ req });
+    next();
   });
 
-  const mongoUri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_URL}/${process.env.MONGODB_DB}?retryWrites=true&w=majority`;
+  app.use('/auth', authRouter);
+  app.use('/contacts', contactsRouter);
 
-  mongoose
-    .connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    .then(() => {
-      console.log('Database connected');
-      const PORT = process.env.PORT || 3002;
-      app.listen(PORT, () =>
-        console.log(`Server running on http://localhost:${PORT}`),
-      );
-    })
-    .catch((err) => {
-      console.error('Database connection error:', err.message);
-    });
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
 
   return app;
-}
+};
 
-export default startServer;
+const initApp = async () => {
+  await initMongoConnection();
+  setupServer();
+};
+
+export default initApp;
