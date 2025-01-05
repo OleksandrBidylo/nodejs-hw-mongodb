@@ -19,6 +19,10 @@ const authenticate = async (req, res, next) => {
       return next(createError(401, 'Access token expired'));
     }
 
+    if (session.refreshToken === null) {
+      return next(createError(401, 'User is logged out'));
+    }
+
     req.user = session.userId;
     next();
   } catch (error) {

@@ -167,7 +167,14 @@ export const logoutCtrl = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
-    await Session.deleteOne({ refreshToken });
+    const session = await Session.findOne({ refreshToken });
+    if (!session) {
+      return next(createError(401, 'Invalid refresh token'));
+    }
+
+    session.accessToken = null;
+    session.refreshToken = null;
+    await session.save();
 
     res.clearCookie('refreshToken', {
       httpOnly: true,

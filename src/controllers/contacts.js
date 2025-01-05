@@ -32,6 +32,14 @@ const getContactsCtrl = ctrlWrapper(async (req, res) => {
 
 const getContactByIdCtrl = ctrlWrapper(async (req, res) => {
   const contact = await getContactById(req.params.contactId, req.user._id);
+
+  if (!contact) {
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+    });
+  }
+
   res.json({
     status: 200,
     message: 'Successfully found contact!',
@@ -61,6 +69,13 @@ const updateContactCtrl = ctrlWrapper(async (req, res) => {
     req.user._id,
   );
 
+  if (!contact) {
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+    });
+  }
+
   res.json({
     status: 200,
     message: 'Successfully updated contact!',
@@ -69,9 +84,19 @@ const updateContactCtrl = ctrlWrapper(async (req, res) => {
 });
 
 const deleteContactCtrl = ctrlWrapper(async (req, res) => {
-  await deleteContact(req.params.contactId, req.user._id);
+  const deletedContact = await deleteContact(
+    req.params.contactId,
+    req.user._id,
+  );
 
-  res.status(204).send();
+  if (!deletedContact) {
+    return res.status(404).json({
+      status: 404,
+      message: 'Contact not found',
+    });
+  }
+
+  res.status(204).send(); // успешное удаление
 });
 
 export {
