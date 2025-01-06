@@ -167,14 +167,15 @@ export const logoutCtrl = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
+    console.log('Received refreshToken:', refreshToken);
+
     const session = await Session.findOne({ refreshToken });
     if (!session) {
       return next(createError(401, 'Invalid refresh token'));
     }
 
-    session.accessToken = null;
-    session.refreshToken = null;
-    await session.save();
+    await Session.deleteOne({ _id: session._id });
+    console.log('Session deleted:', session._id);
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
@@ -188,6 +189,7 @@ export const logoutCtrl = async (req, res, next) => {
 
     res.status(204).send();
   } catch (error) {
+    console.error('Error in logoutCtrl:', error);
     next(error);
   }
 };
