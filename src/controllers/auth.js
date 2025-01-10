@@ -114,7 +114,7 @@ export const loginCtrl = async (req, res, next) => {
 
     res.status(200).json({
       status: 200,
-      message: 'Successfully logged in an user!',
+      message: 'Successfully logged in a user!',
       data: { accessToken },
     });
   } catch (error) {
@@ -124,11 +124,15 @@ export const loginCtrl = async (req, res, next) => {
 
 export const refreshCtrl = async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken, sessionId } = req.cookies;
 
-    const session = await Session.findOne({ refreshToken });
+    if (!refreshToken || !sessionId) {
+      return next(createError(401, 'Refresh token or session ID not provided'));
+    }
+
+    const session = await Session.findOne({ _id: sessionId, refreshToken });
     if (!session) {
-      return next(createError(401, 'Invalid refresh token'));
+      return next(createError(401, 'Invalid session or refresh token'));
     }
 
     if (new Date() > session.refreshTokenValidUntil) {
@@ -156,7 +160,7 @@ export const refreshCtrl = async (req, res, next) => {
     res.status(200).json({
       status: 200,
       message: 'Successfully refreshed session!',
-      data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
+      data: { accessToken: newAccessToken },
     });
   } catch (error) {
     next(error);
@@ -165,17 +169,18 @@ export const refreshCtrl = async (req, res, next) => {
 
 export const logoutCtrl = async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken, sessionId } = req.cookies;
 
-    console.log('Received refreshToken:', refreshToken);
+    if (!refreshToken || !sessionId) {
+      return next(createError(401, 'Refresh token or session ID not provided'));
+    }
 
-    const session = await Session.findOne({ refreshToken });
+    const session = await Session.findOne({ _id: sessionId, refreshToken });
     if (!session) {
-      return next(createError(401, 'Invalid refresh token'));
+      return next(createError(401, 'Invalid session or refresh token'));
     }
 
     await Session.deleteOne({ _id: session._id });
-    console.log('Session deleted:', session._id);
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
@@ -189,7 +194,6 @@ export const logoutCtrl = async (req, res, next) => {
 
     res.status(204).send();
   } catch (error) {
-    console.error('Error in logoutCtrl:', error);
     next(error);
   }
 };

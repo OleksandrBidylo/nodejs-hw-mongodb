@@ -8,6 +8,7 @@ import initMongoConnection from './db/initMongoConnection.js';
 
 import errorHandler from './middlewares/errorHandler.js';
 import notFoundHandler from './middlewares/notFoundHandler.js';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ const setupServer = () => {
 
   app.use(cors());
   app.use(express.json());
+  app.use(cookieParser());
 
   app.use((req, res, next) => {
     logger.info({ req });
